@@ -1,6 +1,10 @@
 
 module.exports = function(app) {
 
+  app.get('/', function(req, res){
+    res.send('ola')
+  })
+
   app.get('/obter_dividas/:cpf', function(req, res){
 
     var conn = require('./../libs/connectdb.js')()
