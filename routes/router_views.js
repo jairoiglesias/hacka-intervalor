@@ -1,33 +1,28 @@
 
-
-
-function distLatLong(lat1,lon1,lat2,lon2) {
-  var R = 6371; // raio da terra em km
-  var Lati =  Math.PI/180*(lat2-lat1);  
-  var Long =  Math.PI/180*(lon2-lon1); 
-  var a = 
-    Math.sin(Lati/2) * Math.sin(Lati/2) +
-    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
-    Math.sin(Long/2) * Math.sin(Long/2)
-    ; 
-  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-  var d = R * c; // distância em km
-  return d;
-}
-
 module.exports = function(app) {
 
-  app.get('/painel_brmania', (req, res) => {
-    res.render('painel_brmania')
+  app.get('/obter_dividas/:cpf', function(req, res){
+
+    var conn = require('./../libs/connectdb.js')()
+
+    console.log(conn)
+
+    var cpf = req.params.cpf
+    var sql  = "select * from tbl_dividas where cpf='" + cpf + "'"
+    
+    conn.query(sql, function(err, rows, fields){
+      
+      if(err) throw err
+
+      res.send(rows)
+  
+    })
+
   })
 
-  app.get('/frentista', (req, res) => {
-    res.render('frentista')
+  app.get('/dashboard', function(req, res){
+    res.render('dashboard')
   })
-
-  // app.get('/teste', (req, res) => {
-  //   res.render('teste')
-  // })
 
   // Devolve o ultimo pedido gerado
   app.get('/get_last_pedido', (req, res) => {
