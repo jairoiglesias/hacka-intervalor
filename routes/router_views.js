@@ -9,8 +9,6 @@ module.exports = function(app) {
 
     var conn = require('./../libs/connectdb.js')()
 
-    console.log(conn)
-
     var cpf = req.params.cpf
     var sql  = "select * from tbl_dividas where cpf='" + cpf + "'"
     
