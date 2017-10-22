@@ -5,57 +5,30 @@
 
 var port = process.env.PORT || 3306
 
-// console.log('Porta para o banco de dados: '+port)
-
-
-global.connection = ''
+console.log('Porta para o banco de dados: '+port)
 
 module.exports = function(){
 
-	function handleDisconnect(callback){
+	var mysql      = require('mysql');
+	var connection = mysql.createConnection({
+	  	host     : 'us-cdbr-iron-east-05.cleardb.net',
+		user     : 'b7948fcbbb87a4',
+		password : 'dfdc849e',
+		database : 'heroku_93169d3d64815cc',
+		port: port
+	});
 
-		if(global.connection.length == 0){
-			var mysql      = require('mysql');
-			global.connection = mysql.createConnection({
-				host     : 'us-cdbr-iron-east-05.cleardb.net',
-				user     : 'b7948fcbbb87a4',
-				password : 'dfdc849e',
-				database : 'heroku_93169d3d64815cc',
-				port: port
-			});
-
-			global.connection.connect(function(err) {
-				if (err) {
-					console.error('error connecting: ' + err.stack);
-					return;
-				}
-
-				console.log('Conexão realizada com sucesso!');
-
-			});
-
-			global.connection.on('error', function(err) {
-				
-				if(err.code === 'PROTOCOL_CONNECTION_LOST') { // Connection to the MySQL server is usually
-					console.log('Tentado reconectar novamente ...')
-					global.connection = ''
-					handleDisconnect(callback);                         // lost due to either server restart, or a
-				} 
-				else {                                      // connnection idle timeout (the wait_timeout
-					throw err;                                  // server variable configures this)
-				}
-			})
-			
-			// return global.connection
-
+	connection.connect(function(err) {
+		if (err) {
+			console.error('error connecting: ' + err.stack);
+			return;
 		}
 
-		return global.connection
-	}
+		console.log('Conexão realizada com sucesso!');
 
-	return handleDisconnect()
-	// return global.connection
+	});
 
+	return connection
 }
 
 // ### MODEL MONGODB ###
