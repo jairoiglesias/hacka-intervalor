@@ -22,110 +22,48 @@ module.exports = function(app) {
 
   })
 
-  app.get('/dashboard', function(req, res){
-    res.render('dashboard')
+  app.get('/carteiras', function(req, res){
+    res.render('carteiras')
   })
 
-  // Devolve o ultimo pedido gerado
-  app.get('/get_last_pedido', (req, res) => {
+  app.get('/obter_carteiras/:player_cobranca/:categoria_score', function(req, res){
 
-    var db = require('./../libs/connectdb.js')()
+    var conn = require('./../libs/connectdb.js')()
 
-    var Pedidos = db.model('Pedidos')
+    var playerCobranca = req.params.player_cobranca
+    var categoriaScore = req.params.categoria_score
 
-    Pedidos.find({}).sort({_id:-1}).limit(1).exec((err, docs) => {
+    var sql = "select sum(tbl_carteiras_dividas.valor) as valor_carteira, percentual_retorno, tbl_carteiras.id_carteira from tbl_carteiras LEFT JOIN tbl_carteiras_dividas ON tbl_carteiras.id_carteira = tbl_carteiras_dividas.id_carteira where categoria_score='"+categoriaScore+"' AND player_cobranca = '"+playerCobranca+"' group by percentual_retorno"
+    
+    console.log(sql)
+    conn.query(sql, function(err, rows, fields){
+
       if(err) throw err
 
-      res.send(docs)
+      res.send(rows)
 
     })
 
   })
 
-  app.get('/pedidos/consulta', (req, res) => {
+  app.post('/salva_valor_investimento', function(req, res){
 
-    var db = require('./../libs/connectdb.js')()
-    
-    var Pedidos = db.model('Pedidos')
+    var idCarteira = req.body.id_carteira
+    var valorInvestimento = req.body.valor_investimento
 
-    Pedidos.find({}, function(err, docs){
-      if(err){
-          throw err
-      }
+    var conn = require('./../libs/connectdb.js')()
 
-      res.send(docs);
-      console.log(docs[0].items[0])
-      
+    var sql = "INSERT tbl_carteiras_investidas SET id_carteira=" + idCarteira + ", valor_investimento="+ valorInvestimento
+    conn.query(sql, function(err, rows, fields){
+
+      res.send('1')
+
     })
 
   })
 
-  app.get('/locais_brmania/consulta/:limit', (req, res) => {
-
-    var limit = Number(req.params.limit)
-
-    var db = require('./../libs/connectdb.js')()
-    
-    var Locais = db.model('Locais')
-
-    Locais.find({}).limit(limit).exec(function(err, docs){
-      if(err){
-          throw err
-      }
-
-      res.send(docs);
-      
-    })
-
-  })
-
-  app.get('/locais_brmania/consulta', (req, res) => {
-
-    var db = require('./../libs/connectdb.js')()
-    
-    var Locais = db.model('Locais')
-
-    Locais.find({}).limit().exec(function(err, docs){
-      if(err){
-          throw err
-      }
-
-      res.send(docs);
-      
-    })
-
-  })
-
-  app.get('/postos/consulta', (req, res) => {
-
-    var db = require('./../libs/connectdb.js')()
-    
-    var Postos = db.model('Postos')
-
-    Postos.find({}, function(err, docs){
-      if(err){
-          throw err
-      }
-
-      res.send(docs);
-      
-    })
-
-  })
-
-  app.get('/get_estoque/:nome_produto', (req, res) => {
-
-    var nomeProduto = req.params.nome_produto;
-
-    var db = require('./../libs/connectdb.js')()
-
-    var Estoques = db.model('Estoques')
-
-    Estoques.find({nome_produto : nomeProduto}, (err, docs) => {
-      console.log(docs)
-      res.send(docs)
-    })
-
+  app.get('/dashboard', function(req, res){
+    res.render('dashboard')
   })
 
   // Função para verificar a disponibilidade dos items no estoque
@@ -219,102 +157,5 @@ module.exports = function(app) {
     })
 
   }
-
-  // ### Efetua o cadastro de um novo pedido no posto devolvendo a imagem do QRCODE em Base64
-
-  app.get('/pedidos/cadastro', (req, res) => {
-
-    var data_cadastro = req.query.data_cadastro;
-    var nome_cliente = req.query.nome_cliente;
-    var items = req.query.items
-
-    // Converte a String JSON recuperada da URL em um objeto JSON valido
-    items = eval(items)
-    
-    // Verifica a disponibilidade do estoque
-    verificaEstoque(items).then(function(itemsProc){
-
-      if(itemsProc.semEstoque == true){
-        console.log('sem estoque em um dos items')
-        res.send(itemsProc)
-      }
-      else{
-
-        console.log('estoque tudo ok')
-
-        var db = require('./../libs/connectdb.js')()
-        
-        var Pedidos = db.model('Pedidos')
-
-        // Cria um novo pedido
-        novoPedido = new Pedidos({
-          data_cadastro: data_cadastro,
-          nome_cliente : nome_cliente
-        })
-
-        novoPedido.save(function(err, results){
-        
-          if(err) throw err
-
-          console.log('cadastrado com sucesso')
-          console.log('1')
-
-          atualizaEstoque(items).then(function(){
-            res.send(itemsProc)
-            console.log('estoque atualizado com sucesso')
-          })
-
-
-          // Inicia a geração da imagem QRCODE
-
-          // var id = String(results._id)
-          // console.log(id)
-
-          // var QRCode = require('qrcode')
-          
-          // QRCode.toDataURL(id, function (err, url) {
-          //   console.log('QRCODE processado com sucesso')
-
-          //   console.log(url)
-
-          //   Pedidos.findOneAndUpdate({_id : results._id}, {'image_qrcode' : url}, function(err, docs){
-          //     if(err){
-          //       throw err
-          //     }
-
-          //     res.send(id)
-
-          //   })
-
-          // })
-
-
-        })
-
-      }
-
-    })
-
-  })
-
-  app.get('/pedidos/:id', (req, res) => {
-
-    var id = req.params.id;
-
-    var db = require('./../libs/connectdb.js')()
-    
-    var Pedidos = db.model('Pedidos')
-
-    Pedidos.findOne({_id : id}, function(err, docs){
-      if(err){
-          throw err
-      }
-
-      res.send(docs);
-      console.log(docs)
-      
-    })
-
-  })
 
 }
